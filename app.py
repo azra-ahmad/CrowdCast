@@ -10,6 +10,8 @@ Alur:
 import os
 import time
 import functools
+import threading
+import uuid
 
 import cv2
 import numpy as np
@@ -48,6 +50,30 @@ def _make_placeholder() -> bytes:
 
 
 PLACEHOLDER = _make_placeholder()
+
+
+# ─── State chat & presence (in-memory, tanpa DB) ─────────────────────────────
+_chat_lock = threading.Lock()
+_messages: list[dict] = []      # {id, user, text, ts}
+_next_msg_id = 1
+_presence: dict[str, float] = {}  # viewer_id -> last_seen
+PRESENCE_TTL = 10               # detik dianggap masih online
+MAX_MSG_LEN = 300
+MAX_KEEP = 200                  # simpan maksimal pesan terakhir
+
+
+def _touch_presence():
+    """Tandai penonton ini masih aktif (termasuk yang belum login)."""
+    vid = session.get("vid")
+    if not vid:
+        vid = uuid.uuid4().hex
+        session["vid"] = vid
+    _presence[vid] = time.time()
+
+
+def _online_count() -> int:
+    cutoff = time.time() - PRESENCE_TTL
+    return sum(1 for t in _presence.values() if t >= cutoff)
 
 
 # ─── Helper: wajib login ─────────────────────────────────────────────────────
@@ -214,6 +240,37 @@ def files():
             if os.path.isfile(path):
                 items.append({"name": name, "size": os.path.getsize(path)})
     return jsonify(files=items)
+
+
+# ─── Chat (polling) ──────────────────────────────────────────────────────────
+@app.route("/chat/send", methods=["POST"])
+@login_required
+def chat_send():
+    data = request.get_json(silent=True) or request.form
+    text = (data.get("text") or "").strip()
+    if not text:
+        return jsonify(ok=False, message="Pesan kosong."), 400
+    if len(text) > MAX_MSG_LEN:
+        return jsonify(ok=False, message=f"Pesan maksimal {MAX_MSG_LEN} karakter."), 400
+
+    global _next_msg_id
+    with _chat_lock:
+        msg = {"id": _next_msg_id, "user": session["user"], "text": text, "ts": time.time()}
+        _messages.append(msg)
+        _next_msg_id += 1
+        if len(_messages) > MAX_KEEP:
+            del _messages[:-MAX_KEEP]
+    return jsonify(ok=True, id=msg["id"])
+
+
+@app.route("/chat/poll")
+def chat_poll():
+    """Publik: siapa pun (termasuk belum login) bisa baca chat & terhitung sebagai penonton."""
+    since = request.args.get("since", 0, type=int)
+    _touch_presence()
+    with _chat_lock:
+        new = [m for m in _messages if m["id"] > since]
+    return jsonify(messages=new, online=_online_count(), me=session.get("user"))
 
 
 # ─── Streaming: relay frame UDP -> MJPEG ─────────────────────────────────────
