@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}CrowdCast — nonton bareng{% endblock %}
+
+{% block body %}
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="logo" href="{{ url_for('index') }}">
+      <svg class="mk" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3 6h8v12H3z" fill="#2F6BFF"/><path d="M13 6h8v12h-8z" fill="#E50914"/>
+        <path d="M12 3l-2.5 7 3 2-3 9" stroke="#fff" stroke-width="1.7" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <span class="wm">CrowdCast</span>
+    </a>
+    <div class="now-pill">
+      <span class="live"><span class="d"></span>LIVE</span>
+      <span class="now-title" id="nowTitle">memuat…</span>
+    </div>
+    <div class="spacer"></div>
+    <span class="viewers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> <b id="onlineCount">0</b></span>
+    {% if session.user %}
+      <button class="btn btn-red" id="castBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Ganti tontonan</button>
+      <span class="usermeta"><b>{{ session.user }}</b></span>
+      <a class="tlink" href="{{ url_for('logout') }}">Logout</a>
+      <input type="file" id="fileInput" accept="video/*" hidden>
+    {% else %}
+      <a class="btn btn-red" href="{{ url_for('login') }}">Masuk</a>
+    {% endif %}
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="stage">
+    <!-- player -->
+    <div class="player">
+      <div class="screen">
+        <img id="videoImg" src="{{ url_for('video_feed') }}" alt="Siaran langsung">
+        <div class="badge"><span class="live"><span class="d"></span>LIVE</span></div>
+        <div class="up-overlay" id="upOverlay">
+          <div class="lbl" id="upLabel">Mengunggah…</div>
+          <div class="up-track"><div class="up-bar" id="upBar"></div></div>
+        </div>
+        <div class="ctrl">
+          <div class="bar"><i></i></div>
+          <div class="ctrl-row">
+            <span class="live-txt"><span class="d"></span> LIVE</span>
+            <span class="spacer"></span>
+            <span class="netinfo">stream via UDP :9020</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- chat -->
+    <aside class="chat">
+      <div class="chat-h">
+        <span class="t">Live chat</span>
+        <span class="chip"><span class="g"></span> <span id="onlineChip">0</span> online</span>
+      </div>
+      <div class="msgs" id="msgs">
+        <div class="sys">Siapa pun yang login bisa ganti siaran. Sopan-sopan, ya.</div>
+      </div>
+      {% if session.user %}
+        <div class="chat-c">
+          <input id="chatInput" placeholder="Tulis pesan…" maxlength="300" autocomplete="off">
+          <button class="send" id="chatSend" aria-label="Kirim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+        </div>
+      {% else %}
+        <div class="chat-login"><a href="{{ url_for('login') }}">Masuk</a> untuk ikut chat &amp; ganti siaran</div>
+      {% endif %}
+    </aside>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const CHAT_POLL_URL = "{{ url_for('chat_poll') }}";
+  const VIDEO_FEED_URL = "{{ url_for('video_feed') }}";
+  {% if session.user %}
+  const CHAT_SEND_URL = "{{ url_for('chat_send') }}";
+  const UPLOAD_URL = "{{ url_for('upload') }}";
+  {% endif %}
+</script>
+{% endblock %}

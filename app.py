@@ -90,9 +90,8 @@ def login_required(view):
 # ─── Halaman ─────────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
-    if "user" in session:
-        return redirect(url_for("dashboard"))
-    return render_template("index.html")
+    """Theater publik — semua orang bisa nonton; login untuk chat & ganti siaran."""
+    return render_template("theater.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -165,7 +164,7 @@ def login():
             if user:
                 email_sender.send_login_alert(user["email"], username)  # best-effort
             flash(f"Selamat datang, {username}!", "success")
-            return redirect(url_for("dashboard"))
+            return redirect(url_for("index"))
 
         # Kalau belum verified, arahkan ke verify + kirim ulang OTP
         user = auth.get_user(username)
@@ -190,9 +189,8 @@ def logout():
 
 
 @app.route("/dashboard")
-@login_required
 def dashboard():
-    return render_template("dashboard.html", username=session["user"])
+    return redirect(url_for("index"))
 
 
 # ─── API: Upload via TCP ─────────────────────────────────────────────────────
@@ -270,12 +268,12 @@ def chat_poll():
     _touch_presence()
     with _chat_lock:
         new = [m for m in _messages if m["id"] > since]
-    return jsonify(messages=new, online=_online_count(), me=session.get("user"))
+    now = os.path.basename(broadcast.get_now_playing() or "") or None
+    return jsonify(messages=new, online=_online_count(), me=session.get("user"), now=now)
 
 
 # ─── Streaming: relay frame UDP -> MJPEG ─────────────────────────────────────
 @app.route("/video_feed")
-@login_required
 def video_feed():
     def generate():
         while True:

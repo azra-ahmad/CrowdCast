@@ -3,37 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}NetVault{% endblock %}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <title>{% block title %}CrowdCast{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  <header class="nav">
-    <div class="nav-inner">
-      <a href="{{ url_for('index') }}" class="brand">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="5" cy="12" r="2.4"></circle>
-          <circle cx="19" cy="5" r="2.4"></circle>
-          <circle cx="19" cy="19" r="2.4"></circle>
-          <line x1="7" y1="11" x2="17" y2="6"></line>
-          <line x1="7" y1="13" x2="17" y2="18"></line>
-        </svg>
-        Net<b>Vault</b>
-      </a>
-      <nav class="nav-links">
-        {% if session.user %}
-          <a href="{{ url_for('dashboard') }}">Dashboard</a>
-          <a href="{{ url_for('logout') }}">Logout</a>
-        {% else %}
-          <a href="{{ url_for('login') }}">Masuk</a>
-          <a href="{{ url_for('register') }}" class="btn btn-primary" style="padding:8px 16px;">Daftar</a>
-        {% endif %}
-      </nav>
-    </div>
-  </header>
-
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <div class="flashes">
@@ -46,15 +19,6 @@
 
   {% block body %}{% endblock %}
 
-  <footer class="footer">
-    <div class="container">
-      <span class="st"><span class="d tcp"></span> TCP :9010 · upload</span>
-      <span class="st"><span class="d udp"></span> UDP :9020 · stream</span>
-      <span class="st">NetVault · UAS Pemrograman Jaringan</span>
-    </div>
-  </footer>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>

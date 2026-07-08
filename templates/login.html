@@ -1,23 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Masuk — NetVault{% endblock %}
+{% block title %}Masuk — CrowdCast{% endblock %}
 
 {% block body %}
-<section class="container auth-wrap reveal">
-  <div class="card">
-    <h1 class="display">Masuk</h1>
-    <p class="card-sub">Autentikasi ke console NetVault.</p>
-    <form method="POST" action="{{ url_for('login') }}">
-      <div class="field">
-        <label for="username">username</label>
-        <input type="text" id="username" name="username" autocomplete="username" required autofocus>
-      </div>
-      <div class="field">
-        <label for="password">password</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" required>
-      </div>
-      <button type="submit" class="btn btn-primary btn-block">Masuk</button>
-    </form>
-    <p class="auth-alt">Belum punya akun? <a href="{{ url_for('register') }}">Daftar</a></p>
+<div class="wrap auth-top">
+  <a class="logo" href="{{ url_for('index') }}">
+    <svg class="mk" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="width:28px;height:28px">
+      <path d="M3 6h8v12H3z" fill="#2F6BFF"/><path d="M13 6h8v12h-8z" fill="#E50914"/>
+      <path d="M12 3l-2.5 7 3 2-3 9" stroke="#fff" stroke-width="1.7" stroke-linejoin="round" fill="none"/>
+    </svg>
+    <span class="wm">CrowdCast</span>
+  </a>
+</div>
+
+<div class="wrap auth-login">
+  <div class="auth-hero">
+    <h1>One stream.<br>Everyone has the remote.</h1>
+    <p class="lead">Satu layar, ditonton bareng. Siapa pun bisa ganti siarannya — kapan aja.</p>
+    <div class="feats">
+      <span><span class="p">●</span> Nonton bareng real-time</span>
+      <span><span class="p">●</span> Chat langsung</span>
+    </div>
   </div>
-</section>
+  <div class="card">
+    <h2>Masuk</h2>
+    <p class="sub">Login buat ikut chat dan ganti siaran.</p>
+    <form method="POST" action="{{ url_for('login') }}">
+      <div class="fld"><label class="lbl" for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" required autofocus></div>
+      <div class="fld"><label class="lbl" for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required></div>
+      <button class="btn btn-red btn-block" type="submit">Masuk</button>
+    </form>
+    <div class="alt">Baru di CrowdCast? <a href="{{ url_for('register') }}">Daftar</a></div>
+  </div>
+</div>
 {% endblock %}

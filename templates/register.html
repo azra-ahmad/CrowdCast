@@ -1,29 +1,31 @@
 {% extends "base.html" %}
-{% block title %}Daftar — NetVault{% endblock %}
+{% block title %}Daftar — CrowdCast{% endblock %}
 
 {% block body %}
-<section class="container auth-wrap reveal">
+<div class="wrap auth-top">
+  <a class="logo" href="{{ url_for('index') }}">
+    <svg class="mk" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="width:28px;height:28px">
+      <path d="M3 6h8v12H3z" fill="#2F6BFF"/><path d="M13 6h8v12h-8z" fill="#E50914"/>
+      <path d="M12 3l-2.5 7 3 2-3 9" stroke="#fff" stroke-width="1.7" stroke-linejoin="round" fill="none"/>
+    </svg>
+    <span class="wm">CrowdCast</span>
+  </a>
+</div>
+
+<div class="wrap auth-narrow">
   <div class="card">
-    <h1 class="display">Buat akun</h1>
-    <p class="card-sub">Daftar untuk mengakses upload &amp; streaming.</p>
+    <h2>Buat akun</h2>
+    <p class="sub">Daftar buat ikut chat &amp; ganti siaran.</p>
     <form method="POST" action="{{ url_for('register') }}">
-      <div class="field">
-        <label for="username">username</label>
-        <input type="text" id="username" name="username" value="{{ form.username or '' }}"
-               maxlength="20" autocomplete="username" required autofocus>
-      </div>
-      <div class="field">
-        <label for="email">email</label>
-        <input type="email" id="email" name="email" value="{{ form.email or '' }}"
-               autocomplete="email" required>
-      </div>
-      <div class="field">
-        <label for="password">password</label>
-        <input type="password" id="password" name="password" autocomplete="new-password" required>
-      </div>
-      <button type="submit" class="btn btn-primary btn-block">Daftar &amp; kirim OTP</button>
+      <div class="fld"><label class="lbl" for="username">Username</label>
+        <input id="username" name="username" value="{{ form.username or '' }}" maxlength="20" autocomplete="username" required autofocus></div>
+      <div class="fld"><label class="lbl" for="email">Email</label>
+        <input id="email" name="email" type="email" value="{{ form.email or '' }}" autocomplete="email" required></div>
+      <div class="fld"><label class="lbl" for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="new-password" required></div>
+      <button class="btn btn-red btn-block" type="submit">Daftar &amp; kirim OTP</button>
     </form>
-    <p class="auth-alt">Sudah punya akun? <a href="{{ url_for('login') }}">Masuk</a></p>
+    <div class="alt">Sudah punya akun? <a href="{{ url_for('login') }}">Masuk</a></div>
   </div>
-</section>
+</div>
 {% endblock %}
