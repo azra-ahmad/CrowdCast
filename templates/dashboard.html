@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — NetVault{% endblock %}
+
+{% block body %}
+<section class="container">
+  <div class="dash-head reveal">
+    <h1 class="display">Console</h1>
+    <p>session: <span class="u">{{ username }}</span> · authenticated · 2 kanal aktif</p>
+  </div>
+
+  <div class="dash-grid">
+    <!-- ── Upload via TCP ── -->
+    <div class="card reveal">
+      <h2>Upload File <span class="tag tag-tcp">TCP</span></h2>
+      <p class="card-sub">Diteruskan ke file server via koneksi TCP asli. Maks 10 MB.</p>
+
+      <label class="dropzone" id="dropzone">
+        <div class="dz-ic">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        </div>
+        <div class="dz-main" id="dzMain">Klik atau tarik file ke sini</div>
+        <div class="dz-sub" id="dzSub">semua tipe file didukung</div>
+        <input type="file" id="fileInput">
+      </label>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-meta">
+          <span id="progressName">—</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="uploadBtn" style="margin-top:16px;" disabled>
+        Kirim via TCP
+      </button>
+
+      <div class="file-list" id="fileList">
+        <div class="empty">belum ada file terupload</div>
+      </div>
+    </div>
+
+    <!-- ── Streaming via UDP ── -->
+    <div class="card reveal">
+      <h2>Streaming Video <span class="tag tag-udp">UDP</span></h2>
+      <p class="card-sub">Dikirim per-frame via UDP, di-relay sebagai MJPEG ke browser.</p>
+
+      <div class="player">
+        <img id="videoImg" alt="Stream video UDP">
+        <div class="player-bar">
+          <span class="live" id="liveTag"><span class="pulse"></span> OFFLINE</span>
+          <div class="player-stats">
+            <span id="fpsStat">0 fps</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; margin-top:16px;">
+        <button class="btn btn-primary" id="playBtn" style="flex:1;">Play stream</button>
+        <button class="btn btn-ghost" id="stopBtn" style="flex:1;" disabled>Stop</button>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const VIDEO_FEED_URL = "{{ url_for('video_feed') }}";
+  const UPLOAD_URL = "{{ url_for('upload') }}";
+  const FILES_URL = "{{ url_for('files') }}";
+</script>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Verifikasi Email — NetVault{% endblock %}
+
+{% block body %}
+<section class="container auth-wrap reveal">
+  <div class="card">
+    <h1 class="display">Verifikasi email</h1>
+    <p class="card-sub">
+      Kode 6 digit dikirim ke <span class="mono" style="color:var(--fg-dim)">{{ email }}</span>.
+    </p>
+    <form method="POST" action="{{ url_for('verify') }}">
+      <div class="field">
+        <label for="code">kode otp</label>
+        <input type="text" id="code" name="code" class="otp-input"
+               maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" required autofocus>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Verifikasi</button>
+    </form>
+    <p class="auth-alt">Tidak menerima kode? <a href="{{ url_for('resend_otp') }}">Kirim ulang</a></p>
+  </div>
+</section>
+{% endblock %}

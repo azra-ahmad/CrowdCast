@@ -1,0 +1,19 @@
+# Rahasia — jangan pernah di-commit
+.env
+.claude
+
+# Data runtime
+users.json
+storage/uploads/*
+!storage/uploads/.gitkeep
+
+# Video sumber (biasanya besar)
+videos/*.mp4
+videos/*.mkv
+videos/*.avi
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Masuk — NetVault{% endblock %}
+
+{% block body %}
+<section class="container auth-wrap reveal">
+  <div class="card">
+    <h1 class="display">Masuk</h1>
+    <p class="card-sub">Autentikasi ke console NetVault.</p>
+    <form method="POST" action="{{ url_for('login') }}">
+      <div class="field">
+        <label for="username">username</label>
+        <input type="text" id="username" name="username" autocomplete="username" required autofocus>
+      </div>
+      <div class="field">
+        <label for="password">password</label>
+        <input type="password" id="password" name="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Masuk</button>
+    </form>
+    <p class="auth-alt">Belum punya akun? <a href="{{ url_for('register') }}">Daftar</a></p>
+  </div>
+</section>
+{% endblock %}
