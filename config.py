@@ -23,10 +23,15 @@ TCP_FILE_PORT = int(os.getenv("TCP_FILE_PORT", "9010"))
 UDP_VIDEO_HOST = os.getenv("UDP_VIDEO_HOST", "127.0.0.1")
 UDP_VIDEO_PORT = int(os.getenv("UDP_VIDEO_PORT", "9020"))
 
-# Batas ukuran file upload: 10 MB
-MAX_FILE_SIZE = 10 * 1024 * 1024
+# Batas ukuran video upload: 200 MB
+MAX_FILE_SIZE = 200 * 1024 * 1024
+
+# Ekstensi video yang boleh di-upload
+ALLOWED_VIDEO_EXT = {".mp4", ".mkv", ".avi", ".mov", ".webm"}
 
 # Lokasi penyimpanan
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "storage", "uploads")
 USERS_FILE = os.path.join(os.path.dirname(__file__), "users.json")
-VIDEO_FILE = os.path.join(os.path.dirname(__file__), "videos", "sample.mp4")
+VIDEOS_DIR = os.path.join(os.path.dirname(__file__), "videos")
+VIDEO_FILE = os.path.join(VIDEOS_DIR, "sample.mp4")           # channel default (fallback)
+NOW_PLAYING_FILE = os.path.join(VIDEOS_DIR, "now_playing.txt")  # penunjuk video aktif

@@ -23,6 +23,7 @@ import auth
 import email_sender
 import tcp_uploader
 import udp_receiver
+import broadcast
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = Flask(
@@ -172,14 +173,31 @@ def dashboard():
 @app.route("/upload", methods=["POST"])
 @login_required
 def upload():
+    """Upload video via TCP; kalau sukses, langsung jadi siaran aktif (now playing)."""
     if "file" not in request.files:
         return jsonify(success=False, message="Tidak ada file."), 400
     f = request.files["file"]
     if not f.filename:
         return jsonify(success=False, message="Nama file kosong."), 400
 
-    data = f.read()
-    ok, msg = tcp_uploader.upload_via_tcp(f.filename, data)
+    ext = os.path.splitext(f.filename)[1].lower()
+    if ext not in config.ALLOWED_VIDEO_EXT:
+        return jsonify(success=False,
+                       message="Harus file video (mp4, mkv, avi, mov, webm)."), 400
+
+    # ukuran file dari stream (tanpa baca semua ke RAM)
+    stream = f.stream
+    stream.seek(0, os.SEEK_END)
+    size = stream.tell()
+    stream.seek(0)
+
+    filename = os.path.basename(f.filename)
+    ok, msg = tcp_uploader.upload_via_tcp(filename, stream, size)
+
+    if ok:
+        # jadikan video ini siaran aktif; video lama dihapus oleh streamer saat switch
+        broadcast.set_now_playing(os.path.join(config.UPLOAD_DIR, filename))
+
     return jsonify(success=ok, message=msg), (200 if ok else 502)
 
 

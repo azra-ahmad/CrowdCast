@@ -1,51 +1,98 @@
 """
-UDP Video Server - backend streaming NetVault.
-Baca file video (OpenCV) -> encode tiap frame jadi JPEG -> kirim via UDP (sendto).
+UDP Video Server - siaran CrowdCast.
+Membaca video yang sedang aktif (broadcast.get_now_playing) lalu menyiarkannya
+frame-per-frame via UDP ke semua penonton (melalui udp_receiver di Flask).
 
-Karena 1 datagram UDP dibatasi ~65 KB, tiap frame dipecah jadi beberapa chunk
-dengan header kecil (frame_id, total_chunk, index) supaya bisa disusun ulang
-di sisi penerima (udp_receiver.py). Frame yang hilang = frame drop (perilaku khas UDP).
+Perilaku:
+  - Video habis  -> loop dari awal (siaran tidak pernah mati).
+  - Ada upload baru (now_playing berubah) -> switch ke video baru dari awal.
+  - Video lama (hasil upload) dihapus setelah di-switch, supaya disk tidak penuh.
+  - Belum ada video sama sekali -> idle (tidak mengirim apa-apa).
+
+Tiap frame dipecah jadi beberapa chunk (header: frame_id, total, index) karena 1
+datagram UDP dibatasi ~65 KB. Frame yang hilang = frame drop (perilaku khas UDP).
 """
 
 import socket
 import time
 import struct
+import os
 
 import cv2
 
 import config
+import broadcast
 
-CHUNK_SIZE = 40000               # payload per datagram (aman < 65 KB)
+CHUNK_SIZE = 40000
 HEADER = struct.Struct("!IHH")   # frame_id (uint32), total (uint16), index (uint16)
 JPEG_QUALITY = 60
 FRAME_SIZE = (640, 360)
 
 
-def main():
-    cap = cv2.VideoCapture(config.VIDEO_FILE)
-    if not cap.isOpened():
-        print(f"[UDP] Gagal buka video: {config.VIDEO_FILE}")
-        print("      Taruh file video di videos/sample.mp4")
-        return
+def _is_uploaded(path: str) -> bool:
+    """True kalau path berada di dalam folder upload (bukan channel default)."""
+    try:
+        up = os.path.abspath(config.UPLOAD_DIR)
+        return os.path.commonpath([os.path.abspath(path), up]) == up
+    except ValueError:
+        return False
 
+
+def _open(path: str):
+    cap = cv2.VideoCapture(path)
+    if not cap.isOpened():
+        cap.release()
+        return None, 25.0
+    fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
+    return cap, fps
+
+
+def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     target = (config.UDP_VIDEO_HOST, config.UDP_VIDEO_PORT)
 
-    fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
-    delay = 1.0 / fps
-
     print("=" * 50)
-    print("  NetVault UDP Video Server")
-    print(f"  Streaming {config.VIDEO_FILE} -> {target[0]}:{target[1]}")
-    print(f"  {fps:.0f} FPS, resize {FRAME_SIZE}, JPEG q{JPEG_QUALITY}")
+    print("  CrowdCast UDP Video Server")
+    print(f"  Menyiarkan ke {target[0]}:{target[1]}")
     print("=" * 50)
 
+    current = None
+    cap = None
+    delay = 0.04
     frame_id = 0
+
     try:
         while True:
+            desired = broadcast.get_now_playing()
+
+            # ── ganti sumber siaran ──
+            if desired != current:
+                old = current
+                if cap is not None:
+                    cap.release()
+                    cap = None
+                # hapus video lama (hanya kalau hasil upload, bukan channel default)
+                if old and old != desired and _is_uploaded(old) and os.path.isfile(old):
+                    try:
+                        os.remove(old)
+                        print(f"[UDP] video lama dihapus: {os.path.basename(old)}")
+                    except OSError as e:
+                        print(f"[UDP] gagal hapus video lama: {e}")
+                current = desired
+                if desired:
+                    cap, fps = _open(desired)
+                    delay = 1.0 / (fps or 25.0)
+                    if cap:
+                        print(f"[UDP] sekarang menyiarkan: {os.path.basename(desired)} ({fps:.0f} fps)")
+
+            # ── belum ada video / gagal buka ──
+            if cap is None:
+                time.sleep(0.3)
+                continue
+
             ret, frame = cap.read()
-            if not ret:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # ulang dari awal (loop)
+            if not ret:                                   # video habis -> loop
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 continue
 
             frame = cv2.resize(frame, FRAME_SIZE)
@@ -64,7 +111,8 @@ def main():
     except KeyboardInterrupt:
         print("\n[INFO] UDP server dihentikan.")
     finally:
-        cap.release()
+        if cap is not None:
+            cap.release()
         sock.close()
 
 

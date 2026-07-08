@@ -4,6 +4,7 @@
 
 # Data runtime
 users.json
+videos/now_playing.txt
 storage/uploads/*
 !storage/uploads/.gitkeep
 
