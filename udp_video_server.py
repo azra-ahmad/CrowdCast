@@ -19,6 +19,7 @@ import struct
 import os
 
 import cv2
+import numpy as np
 
 import config
 import broadcast
@@ -36,6 +37,23 @@ def _is_uploaded(path: str) -> bool:
         return os.path.commonpath([os.path.abspath(path), up]) == up
     except ValueError:
         return False
+
+
+def _fit(frame, size):
+    """
+    Skala frame agar muat di kanvas `size` (fixed) sambil menjaga rasio asli.
+    Sisa area diisi hitam -> video portrait tampil dengan bar kiri-kanan (pillarbox),
+    tidak ketarik gepeng. Ukuran output tetap konsisten.
+    """
+    tw, th = size
+    h, w = frame.shape[:2]
+    scale = min(tw / w, th / h)
+    nw, nh = max(1, int(w * scale)), max(1, int(h * scale))
+    resized = cv2.resize(frame, (nw, nh))
+    canvas = np.zeros((th, tw, 3), dtype=np.uint8)
+    x, y = (tw - nw) // 2, (th - nh) // 2
+    canvas[y:y + nh, x:x + nw] = resized
+    return canvas
 
 
 def _open(path: str):
@@ -95,7 +113,7 @@ def main():
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 continue
 
-            frame = cv2.resize(frame, FRAME_SIZE)
+            frame = _fit(frame, FRAME_SIZE)
             ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY])
             if not ok:
                 continue

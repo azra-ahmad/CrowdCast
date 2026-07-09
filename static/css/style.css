@@ -16,7 +16,7 @@ a{color:inherit;text-decoration:none}
 
 /* logo */
 .logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px;letter-spacing:-.02em}
-.logo .mk{width:26px;height:26px;display:block;flex:none}
+.logo .mk{width:26px;height:26px;display:block;flex:none;object-fit:contain}
 .logo .wm{color:#fff;font-weight:800}
 
 /* topbar */
@@ -113,6 +113,7 @@ a{color:inherit;text-decoration:none}
 
 @media(max-width:900px){
   .stage{flex-direction:column}
+  .player{flex:none;width:100%}
   .chat{flex:none;height:400px}
   .auth-login{grid-template-columns:1fr;gap:26px;min-height:auto;padding-top:4vh}
   .now-title,.usermeta{display:none}
