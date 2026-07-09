@@ -42,9 +42,11 @@ udp_receiver.start()
 
 # ─── Placeholder frame (saat streaming belum ada) ────────────────────────────
 def _make_placeholder() -> bytes:
-    img = np.full((360, 640, 3), 240, dtype=np.uint8)  # abu terang
-    cv2.putText(img, "Menunggu stream UDP...", (110, 185),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (120, 120, 120), 2)
+    img = np.full((360, 640, 3), 12, dtype=np.uint8)  # hampir hitam (tema dark)
+    cv2.putText(img, "Belum ada siaran", (175, 175),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (150, 150, 155), 2)
+    cv2.putText(img, "Upload video untuk memulai", (170, 210),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (110, 110, 115), 1)
     ok, buf = cv2.imencode(".jpg", img)
     return buf.tobytes()
 

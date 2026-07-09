@@ -25,6 +25,7 @@ def _listen():
 
     global _latest_frame
     buffers: dict[int, dict] = {}  # frame_id -> {index: payload}
+    last_id = -1                   # frame terakhir yang ditampilkan (anti mundur)
 
     while True:
         try:
@@ -43,10 +44,14 @@ def _listen():
         if len(entry) == total:
             try:
                 frame = b"".join(entry[i] for i in range(total))
+            except KeyError:
+                frame = None  # ada chunk hilang, skip frame ini
+            # hanya tampilkan frame yang lebih baru (cegah loncat mundur);
+            # id jauh lebih kecil = streamer restart -> terima sebagai awal baru
+            if frame is not None and (frame_id > last_id or last_id - frame_id > 300):
                 with _lock:
                     _latest_frame = frame
-            except KeyError:
-                pass  # ada chunk hilang, skip frame ini
+                last_id = frame_id
             buffers.pop(frame_id, None)
 
         # Batasi memori: buang frame lama yang belum lengkap
