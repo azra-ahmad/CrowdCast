@@ -9,7 +9,7 @@
       <span class="wm">CrowdCast</span>
     </a>
     <div class="now-pill">
-      <span class="live"><span class="d"></span>LIVE</span>
+      <span class="live"><span class="d"></span>STREAMING</span>
       <span class="now-title" id="nowTitle">memuat…</span>
     </div>
     <div class="spacer"></div>
@@ -20,7 +20,8 @@
       <a class="tlink" href="{{ url_for('logout') }}">Logout</a>
       <input type="file" id="fileInput" accept="video/*" hidden>
     {% else %}
-      <a class="btn btn-red" href="{{ url_for('login') }}">Masuk</a>
+      <a class="btn btn-red" href="{{ url_for('login') }}" title="Masuk dulu untuk ganti tontonan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Ganti tontonan</a>
+      <a class="tlink" href="{{ url_for('login') }}">Masuk</a>
     {% endif %}
   </div>
 </header>
@@ -30,8 +31,8 @@
     <!-- player -->
     <div class="player">
       <div class="screen">
-        <img id="videoImg" src="{{ url_for('video_feed') }}" alt="Siaran langsung">
-        <div class="badge"><span class="live"><span class="d"></span>LIVE</span></div>
+        <img id="videoImg" src="{{ url_for('video_feed') }}" alt="Streaming video">
+        <div class="badge"><span class="live"><span class="d"></span>STREAMING</span></div>
         <div class="up-overlay" id="upOverlay">
           <div class="lbl" id="upLabel">Mengunggah…</div>
           <div class="up-track"><div class="up-bar" id="upBar"></div></div>
@@ -39,7 +40,7 @@
         <div class="ctrl">
           <div class="bar"><i></i></div>
           <div class="ctrl-row">
-            <span class="live-txt"><span class="d"></span> LIVE</span>
+            <span class="live-txt"><span class="d"></span> STREAMING</span>
             <span class="spacer"></span>
             <span class="netinfo">stream via UDP :9020</span>
           </div>

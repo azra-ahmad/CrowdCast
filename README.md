@@ -1,16 +1,22 @@
-# CrowdCast
+<p align="center">
+  <img src="static/img/CrowdCast.png" alt="CrowdCast" width="150">
+</p>
 
-> One stream. Everyone has the remote.
+<h1 align="center">CrowdCast</h1>
+<p align="center"><em>One stream. Everyone has the remote.</em></p>
 
-Aplikasi **nonton bareng berbasis web** — pengembangan dari tugas Socket Programming (TCP & UDP).
+# Pemrograman Jaringan - UAS
+
+Aplikasi **nonton bareng berbasis web** yang diberi nama **CrowdCast** pengembangan dari tugas Socket Programming (TCP & UDP).
 Satu theater global: siapa pun yang login bisa **upload video (via TCP)** untuk langsung jadi
 tontonan yang **disiarkan ke semua penonton (via UDP)**, sambil **chat real-time**.
 
 Repo: https://github.com/azra-ahmad/CrowdCast
 
-> Catatan: ini **video streaming** (menyiarkan file video yang di-upload), **bukan live camera**.
-> Video dikirim sebagai frame gambar (MJPEG) lewat UDP, sehingga tetap jalan walau kualitas
-> turun / ada frame yang hilang — ciri khas UDP.
+## Catatan: 
+- ini **video streaming** (menyiarkan file video yang di-upload), **bukan live camera**.
+- Video dikirim sebagai frame gambar (MJPEG) lewat UDP, sehingga tetap jalan walau kualitas
+turun / ada frame yang hilang — ciri khas UDP.
 
 ## Fitur (ketentuan UAS)
 
@@ -87,13 +93,28 @@ python app.py                # 3) web app             (http://localhost:5000)
 
 Buka `http://localhost:5000` → nonton langsung; Daftar/Masuk untuk chat & "Ganti tontonan".
 
-> Pastikan **hanya satu** `udp_video_server` berjalan. Kalau ada dua, siaran akan tersendat
-> (dua streamer mengirim ke port yang sama).
+> **Jalankan tiap program sekali saja.** Kalau `udp_video_server.py` tidak sengaja jalan dua
+> kali (mis. terminal lama ditutup tanpa `Ctrl+C`, jadi prosesnya masih hidup), siaran akan
+> tersendat karena dua streamer mengirim ke port yang sama.
+>
+> Ini **tidak berhubungan dengan jumlah video yang di-upload** — upload video sebanyak apa pun
+> aman, karena hanya ada 1 video aktif pada satu waktu.
+>
+> Cek & matikan proses yang nyangkut:
+> ```bash
+> # Windows (PowerShell)
+> Get-CimInstance Win32_Process -Filter "name='python.exe'" | Select-Object ProcessId,CommandLine
+> Stop-Process -Id <PID> -Force
+>
+> # Linux / macOS
+> pgrep -af udp_video_server.py
+> pkill -f udp_video_server.py
+> ```
 
 ## Deploy dengan Cloudflare (DNS)
 
-App tetap berjalan di **mesin kamu** (laptop atau VM); Cloudflare Tunnel hanya mengekspos
-ke domain publik — bukan tempat hosting/penyimpanan.
+App tetap berjalan di laptop atau VM. Cloudflare Tunnel hanya mengekspos
+ke domain publik, bukan tempat hosting/penyimpanan.
 
 ```bash
 # install cloudflared, lalu:
