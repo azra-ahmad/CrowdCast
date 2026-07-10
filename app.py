@@ -12,12 +12,13 @@ import time
 import functools
 import threading
 import uuid
+import mimetypes
 
 import cv2
 import numpy as np
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    session, flash, Response, jsonify,
+    session, flash, Response, jsonify, send_file,
 )
 
 import config
@@ -292,7 +293,25 @@ def chat_poll():
     with _chat_lock:
         new = [m for m in _messages if m["id"] > since]
     now = os.path.basename(broadcast.get_now_playing() or "") or None
-    return jsonify(messages=new, online=_online_count(), me=session.get("user"), now=now)
+    # `pos` = posisi putar siaran (detik). Klien memakainya untuk menyelaraskan audio.
+    pos = round(udp_receiver.get_latest_pos_ms() / 1000.0, 2)
+    return jsonify(messages=new, online=_online_count(), me=session.get("user"),
+                   now=now, pos=pos)
+
+
+# ─── Audio (HTTP) ────────────────────────────────────────────────────────────
+@app.route("/audio")
+def audio_track():
+    """
+    Sajikan berkas video yang sedang disiarkan; browser mengambil track audionya.
+    Path tidak pernah berasal dari input pengguna (selalu video aktif), dan
+    `conditional=True` mengaktifkan HTTP Range supaya audio bisa di-seek.
+    """
+    path = broadcast.get_now_playing()
+    if not path or not os.path.isfile(path):
+        return jsonify(success=False, message="Belum ada siaran."), 404
+    mime = mimetypes.guess_type(path)[0] or "video/mp4"
+    return send_file(path, mimetype=mime, conditional=True)
 
 
 # ─── Streaming: relay frame UDP -> MJPEG ─────────────────────────────────────

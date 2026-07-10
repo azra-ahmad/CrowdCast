@@ -21,8 +21,9 @@ turun / ada frame yang hilang — ciri khas UDP.
 2. Sistem login + **verifikasi email** (OTP via Gmail SMTP).
 3. **Upload file via TCP** (streaming per-chunk, maks 95 MB).
 4. **Streaming video via UDP** (frame per-frame, letterbox menjaga rasio).
-5. Chat real-time + jumlah penonton online (bonus).
-6. Deploy via DNS Cloudflare.
+5. **Audio via HTTP**, diselaraskan ke posisi siaran dari server.
+6. Chat real-time + jumlah penonton online (bonus).
+7. Deploy via DNS Cloudflare.
 
 Tanpa database — user disimpan di `users.json`, state siaran & chat in-memory.
 
@@ -39,7 +40,13 @@ Tanpa database — user disimpan di `users.json`, state siaran & chat in-memory.
   Browser (theater)  ──HTTP──►  Flask (app.py)  ──┬── TCP ──►  tcp_file_server  (simpan video)
    nonton · chat · upload                         └── UDP ──►  udp_video_server (siarkan frame)
                                                       (via udp_receiver → /video_feed MJPEG)
+
+  Audio:  Browser ──HTTP /audio──► Flask  (berkas video yang sedang disiarkan)
+          Diselaraskan memakai `pos` (posisi putar) yang dititipkan di header paket UDP.
 ```
+
+**Tiga protokol, tiga kebutuhan berbeda:** TCP untuk upload (file harus utuh), UDP untuk siaran
+video (cepat, frame boleh hilang), HTTP untuk audio & antarmuka (harus utuh, bisa di-seek).
 
 Browser tidak bisa membuka socket TCP/UDP mentah, jadi Flask jadi **gateway**: kode socket jadi
 backend service. TCP & UDP asli tetap dipakai (bisa dibuktikan di Wireshark).
@@ -130,8 +137,14 @@ Akses lewat `https://crowdcast.domainmu.com` (via DNS Cloudflare).
 
 ## Catatan
 
-- **Tanpa audio**: video dikirim sebagai frame gambar (MJPEG) via UDP; gambar tidak membawa
-  suara. Menambah audio butuh pipeline berbeda (mis. WebRTC), di luar scope tugas.
+- **Audio & sinkronisasi**: video dikirim sebagai frame gambar (MJPEG) via UDP — gambar tidak
+  membawa suara. Audio diambil terpisah lewat HTTP (`/audio`) dari berkas video yang sama, lalu
+  diselaraskan ke `pos` (posisi putar) yang dikirim server di header paket UDP. Karena semua
+  penonton mengacu ke jam yang sama, mereka mendengar momen yang sama.
+  Sinkronisasinya **perkiraan** (toleransi ~0,75 detik), bukan frame-accurate. Untuk presisi
+  penuh diperlukan protokol media seperti RTP/WebRTC.
+- Audio hanya berbunyi bila codec berkas didukung browser (mp4/webm aman; mkv/avi sering tidak).
+- Audio harus dinyalakan lewat tombol di player — browser melarang audio berbunyi otomatis.
 - Password di-hash (`werkzeug.security`); `.env` & `users.json` tidak di-commit (`.gitignore`).
 - Nama file di-sanitasi (`os.path.basename`) + batas ukuran 95 MB (validasi di client & server;
   Cloudflare plan gratis menolak request body > 100 MB).

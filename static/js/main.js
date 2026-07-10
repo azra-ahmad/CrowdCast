@@ -7,8 +7,77 @@ document.addEventListener("DOMContentLoaded", () => {
   if (document.getElementById("msgs")) {
     startChat();
     initCast();
+    initAudio();
   }
 });
+
+// ─── Audio via HTTP, diselaraskan ke posisi siaran (jam server) ──────────────
+// Video datang lewat UDP (boleh drop frame), audio lewat HTTP (harus utuh).
+// Keduanya diikat ke `pos` dari server, jadi semua penonton dengar momen yang sama.
+const DRIFT_TOLERANCE = 0.75;   // detik; di bawah ini dibiarkan jalan sendiri
+let _audioEl = null, _audioBtn = null, _audioOn = false;
+let _loadedName = null, _currentName = null;
+
+const ICON_MUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+const ICON_SOUND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+
+function initAudio() {
+  _audioEl = document.getElementById("audioTrack");
+  _audioBtn = document.getElementById("audioBtn");
+  if (!_audioEl || !_audioBtn) return;
+
+  _audioBtn.addEventListener("click", () => {
+    _audioOn = !_audioOn;
+    if (_audioOn) {
+      ensureAudioSrc(_currentName);          // baru diunduh saat audio dinyalakan
+      _audioEl.play().catch(() => {});
+    } else {
+      _audioEl.pause();
+    }
+    paintAudioBtn();
+  });
+
+  _audioEl.addEventListener("error", () => {
+    if (!_audioOn) return;
+    _audioOn = false;
+    paintAudioBtn();
+    toast("Browser tidak bisa memutar audio dari format video ini.", "error");
+  });
+
+  paintAudioBtn();
+}
+
+function paintAudioBtn() {
+  if (!_audioBtn) return;
+  _audioBtn.innerHTML = _audioOn ? ICON_SOUND : ICON_MUTE;
+  _audioBtn.classList.toggle("on", _audioOn);
+  _audioBtn.title = _audioOn ? "Matikan audio" : "Nyalakan audio";
+  _audioBtn.setAttribute("aria-label", _audioBtn.title);
+}
+
+function ensureAudioSrc(name) {
+  if (!_audioEl || !name || _loadedName === name) return;
+  _loadedName = name;
+  _audioEl.src = AUDIO_URL + "?v=" + encodeURIComponent(name);
+}
+
+function syncAudio(name, pos) {
+  _currentName = name;
+  if (!_audioEl || !_audioOn || !name || typeof pos !== "number") return;
+
+  if (_loadedName !== name) {           // siaran berganti -> muat audio baru
+    ensureAudioSrc(name);
+    _audioEl.play().catch(() => {});
+    return;                            // biarkan poll berikutnya yang menyelaraskan
+  }
+  if (_audioEl.readyState < 1) return; // metadata belum siap, belum bisa di-seek
+
+  // koreksi hanya bila melenceng jauh (termasuk saat video loop balik ke awal)
+  if (Math.abs(_audioEl.currentTime - pos) > DRIFT_TOLERANCE) {
+    try { _audioEl.currentTime = pos; } catch (_) {}
+  }
+  if (_audioEl.paused) _audioEl.play().catch(() => {});
+}
 
 // ─── Chat (polling 1.2s) ─────────────────────────────────────────────────────
 function startChat() {
@@ -39,6 +108,7 @@ function startChat() {
         if (onlineCount) onlineCount.textContent = data.online;
         if (onlineChip) onlineChip.textContent = data.online;
         if (nowTitle) nowTitle.textContent = data.now || "Belum ada siaran";
+        syncAudio(data.now, data.pos);
       })
       .catch(() => {});
   }

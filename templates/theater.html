@@ -41,11 +41,14 @@
           <div class="bar"><i></i></div>
           <div class="ctrl-row">
             <span class="live-txt"><span class="d"></span> STREAMING</span>
+            <button class="ico" id="audioBtn" aria-label="Nyalakan audio" title="Nyalakan audio"></button>
             <span class="spacer"></span>
-            <span class="netinfo">stream via UDP :9020</span>
+            <span class="netinfo">video via UDP · audio via HTTP</span>
           </div>
         </div>
       </div>
+      <!-- audio diambil dari berkas video yang sama, lewat HTTP -->
+      <audio id="audioTrack" preload="none"></audio>
     </div>
 
     <!-- chat -->
@@ -74,6 +77,7 @@
 <script>
   const CHAT_POLL_URL = "{{ url_for('chat_poll') }}";
   const VIDEO_FEED_URL = "{{ url_for('video_feed') }}";
+  const AUDIO_URL = "{{ url_for('audio_track') }}";
   {% if session.user %}
   const CHAT_SEND_URL = "{{ url_for('chat_send') }}";
   const UPLOAD_URL = "{{ url_for('upload') }}";

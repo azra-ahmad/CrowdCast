@@ -25,7 +25,9 @@ import config
 import broadcast
 
 CHUNK_SIZE = 40000
-HEADER = struct.Struct("!IHH")   # frame_id (uint32), total (uint16), index (uint16)
+# frame_id (u32), total chunk (u16), index chunk (u16), posisi putar ms (u32).
+# pos_ms ikut dikirim supaya klien bisa menyelaraskan audio (HTTP) dengan video (UDP).
+HEADER = struct.Struct("!IHHI")
 # 960x540 supaya teks/slide terbaca jelas. Frame ~55 KB -> dipecah jadi 2 chunk UDP.
 # (Ini keuntungan punya chunking: resolusi tidak dibatasi ukuran 1 datagram.)
 JPEG_QUALITY = 70
@@ -78,6 +80,7 @@ def main():
 
     current = None
     cap = None
+    fps = 25.0
     delay = 0.04
     frame_id = 0
 
@@ -115,6 +118,11 @@ def main():
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 continue
 
+            # posisi putar frame ini (ms) -> dipakai klien untuk menyelaraskan audio
+            pos_ms = int(cap.get(cv2.CAP_PROP_POS_MSEC) or 0)
+            if pos_ms <= 0:                               # sebagian codec tidak isi POS_MSEC
+                pos_ms = int((cap.get(cv2.CAP_PROP_POS_FRAMES) or 0) / (fps or 25.0) * 1000)
+
             frame = _fit(frame, FRAME_SIZE)
             ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY])
             if not ok:
@@ -124,7 +132,7 @@ def main():
             total = (len(data) + CHUNK_SIZE - 1) // CHUNK_SIZE
             for idx in range(total):
                 part = data[idx * CHUNK_SIZE:(idx + 1) * CHUNK_SIZE]
-                sock.sendto(HEADER.pack(frame_id, total, idx) + part, target)
+                sock.sendto(HEADER.pack(frame_id, total, idx, pos_ms) + part, target)
 
             frame_id = (frame_id + 1) % (2 ** 32)
             time.sleep(delay)
