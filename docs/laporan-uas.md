@@ -436,32 +436,24 @@ dapat dipakai sekali; permintaan `/audio` ketika belum ada siaran dibalas HTTP 4
 
 ### 7.5 Pengembangan agar lebih aman, cepat, dan andal
 
-Ketiga aspek tersebut sebenarnya saling terkait, dan arah pengembangan yang sama sering
-memperbaiki lebih dari satu sekaligus.
+Beberapa arah pengembangan yang dapat dilakukan (masing-masing sering memperbaiki lebih dari
+satu aspek sekaligus):
 
-Peningkatan terbesar datang dari **mengganti pipeline MJPEG dengan protokol media modern seperti
-RTP/WebRTC**. Langkah ini membuat aplikasi *lebih cepat* karena memakai kompresi antar-frame
-(H.264/VP8) yang jauh lebih hemat bandwidth daripada mengirim gambar utuh per frame; *lebih
-andal* karena audio dan video mengalir dalam satu aliran yang sudah tersinkron, sehingga masalah
-penyelarasan hilang; sekaligus *lebih aman* karena WebRTC mengenkripsi media secara bawaan.
-Untuk melayani banyak penonton, aliran ini diteruskan lewat **SFU** (Selective Forwarding Unit)
-agar server hanya menerima satu aliran lalu meneruskannya secara efisien — mencegah beban unggah
-membengkak seiring bertambahnya penonton — dan dilengkapi *adaptive bitrate* yang menurunkan
-kualitas otomatis saat jaringan melemah.
-
-Dari sisi infrastruktur, aplikasi sebaiknya dijalankan di belakang **server WSGI produksi**
-(Gunicorn/Waitress) dengan reverse proxy, diawasi oleh manajer proses (systemd/supervisor) dan
-health check otomatis agar tetap hidup dan pulih sendiri saat bermasalah. Status yang kini
-disimpan di memori (chat, sesi, daftar penonton) dipindahkan ke **penyimpanan persisten** seperti
-Redis agar tidak hilang saat restart, dan berkas video dipindahkan ke **object storage** (mis.
-Cloudflare R2) agar diska server tidak penuh — dua hal yang langsung menaikkan keandalan.
-
-Dari sisi keamanan, sistem diperkuat dengan **rate limiting** pada login, registrasi, chat, dan
-unggah untuk mencegah penyalahgunaan; **CSRF token** pada formulir; validasi tipe berkas
-berdasarkan isi (magic number), bukan sekadar ekstensi; penyimpanan pengguna di basis data yang
-disertai kontrol akses dan audit log; serta **Cloudflare Access** agar hanya penonton berwenang
-yang dapat membuka domain. Terakhir, pengujian otomatis untuk jalur TCP dan UDP menjaga agar
-seluruh perbaikan tersebut tetap andal saat aplikasi terus dikembangkan.
+- Mengganti pipeline MJPEG dengan protokol media modern seperti **RTP/WebRTC** — memakai kompresi
+  antar-frame (lebih hemat bandwidth), membawa audio-video tersinkron dalam satu aliran, dan
+  terenkripsi secara bawaan.
+- Memakai **SFU** (Selective Forwarding Unit) agar server cukup menerima satu aliran lalu
+  meneruskannya ke banyak penonton, sehingga beban tidak membengkak seiring jumlah penonton.
+- Menerapkan **adaptive bitrate** — kualitas turun otomatis saat jaringan melemah.
+- Menjalankan di belakang **server WSGI produksi** (Gunicorn/Waitress) dengan reverse proxy dan
+  pengawas proses (systemd/supervisor) agar stabil dan pulih sendiri.
+- Memindahkan status (chat, sesi) ke penyimpanan persisten seperti **Redis** agar tidak hilang
+  saat restart, dan berkas ke **object storage** (mis. Cloudflare R2) agar diska tidak penuh.
+- Menambahkan **rate limiting**, **CSRF token**, dan validasi berkas berdasarkan isi (magic
+  number) untuk mencegah penyalahgunaan.
+- Memakai basis data dengan kontrol akses dan audit log, serta **Cloudflare Access** untuk
+  membatasi siapa yang dapat membuka aplikasi.
+- Menambahkan pengujian otomatis untuk jalur TCP dan UDP.
 
 ---
 
