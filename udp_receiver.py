@@ -7,10 +7,12 @@ Flask route /video_feed membaca latest_frame dan me-relay ke browser sebagai MJP
 import socket
 import threading
 import struct
+import time
 
 import config
 
-HEADER = struct.Struct("!IHHI")  # samakan dengan udp_video_server.py
+HEADER = struct.Struct("!IIHHI")  # samakan dengan udp_video_server.py
+STREAM_TIMEOUT = 2.0             # detik streamer dianggap mati -> boleh pindah stream lain
 
 _latest_frame: bytes | None = None
 _latest_pos_ms: int = 0          # posisi putar frame terakhir (untuk sinkronisasi audio)
@@ -25,9 +27,11 @@ def _listen():
     print(f"[UDP-RX] Mendengarkan frame di {config.UDP_VIDEO_HOST}:{config.UDP_VIDEO_PORT}")
 
     global _latest_frame, _latest_pos_ms
-    buffers: dict[int, dict] = {}  # frame_id -> {index: payload}
+    buffers: dict[int, dict] = {}   # frame_id -> {index: payload}
     positions: dict[int, int] = {}  # frame_id -> posisi putar (ms)
-    last_id = -1                   # frame terakhir yang ditampilkan (anti mundur)
+    last_id = -1                    # frame terakhir yang ditampilkan (anti mundur)
+    cur_stream = None               # streamer yang sedang "dikunci"
+    last_seen = 0.0                 # kapan terakhir dengar streamer itu
 
     while True:
         try:
@@ -37,8 +41,22 @@ def _listen():
         if len(packet) < HEADER.size:
             continue
 
-        frame_id, total, idx, pos_ms = HEADER.unpack(packet[:HEADER.size])
+        stream_id, frame_id, total, idx, pos_ms = HEADER.unpack(packet[:HEADER.size])
         payload = packet[HEADER.size:]
+        now = time.monotonic()
+
+        # ── kunci ke satu streamer ──
+        if cur_stream is None or stream_id == cur_stream:
+            cur_stream = stream_id
+        elif now - last_seen > STREAM_TIMEOUT:
+            # streamer lama sudah diam -> pindah ke streamer baru, mulai dari awal
+            print(f"[UDP-RX] Pindah ke streamer {stream_id} (yang lama diam)")
+            cur_stream, last_id = stream_id, -1
+            buffers.clear()
+            positions.clear()
+        else:
+            continue  # ada streamer kedua jalan bersamaan -> abaikan, jangan rebutan
+        last_seen = now
 
         entry = buffers.setdefault(frame_id, {})
         entry[idx] = payload
@@ -49,9 +67,8 @@ def _listen():
                 frame = b"".join(entry[i] for i in range(total))
             except KeyError:
                 frame = None  # ada chunk hilang, skip frame ini
-            # hanya tampilkan frame yang lebih baru (cegah loncat mundur);
-            # id jauh lebih kecil = streamer restart -> terima sebagai awal baru
-            if frame is not None and (frame_id > last_id or last_id - frame_id > 300):
+            # dalam satu stream, frame_id selalu naik -> cukup tolak yang lebih lama
+            if frame is not None and frame_id > last_id:
                 with _lock:
                     _latest_frame = frame
                     _latest_pos_ms = pos_ms

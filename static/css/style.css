@@ -70,7 +70,11 @@ a{color:inherit;text-decoration:none}
 .up-bar{height:100%;width:0;background:var(--red);border-radius:999px;transition:width .15s}
 
 /* chat */
-.chat{flex:0 0 360px;align-self:stretch;border:1px solid var(--border);border-radius:14px;background:var(--panel);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+/* wrapper tidak punya tinggi sendiri -> ikut tinggi player (align-items:stretch).
+   chat diposisikan absolut di dalamnya, jadi pesan yang menumpuk tidak bisa
+   memanjangkan halaman; yang menggulung adalah .msgs. */
+.chat-wrap{flex:0 0 360px;min-width:0;position:relative}
+.chat{position:absolute;inset:0;border:1px solid var(--border);border-radius:14px;background:var(--panel);display:flex;flex-direction:column;overflow:hidden}
 .chat-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);flex:none}
 .chat-h .t{font-size:14px;font-weight:700}
 .chip{font-size:11px;color:var(--text2);background:var(--panel2);border:1px solid var(--border);padding:4px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:6px}
@@ -118,7 +122,7 @@ a{color:inherit;text-decoration:none}
 @media(max-width:900px){
   .stage{flex-direction:column}
   .player{flex:none;width:100%}
-  .chat{flex:none;height:400px}
+  .chat-wrap{flex:none;width:100%;height:400px}
   .auth-login{grid-template-columns:1fr;gap:26px;min-height:auto;padding-top:4vh}
   .now-title,.usermeta{display:none}
 }
@@ -132,6 +136,6 @@ a{color:inherit;text-decoration:none}
   .viewers{font-size:12px}
   .topbar-in .tlink{order:5}
   .topbar-in .btn{order:10;flex:1 1 100%;justify-content:center}
-  .chat{height:340px}
+  .chat-wrap{height:340px}
   .flashes{top:auto;bottom:16px;right:14px;left:14px}
 }

@@ -51,7 +51,8 @@
       <audio id="audioTrack" preload="none"></audio>
     </div>
 
-    <!-- chat -->
+    <!-- chat: dibungkus wrapper supaya tingginya mengikuti player, bukan isi chat -->
+    <div class="chat-wrap">
     <aside class="chat">
       <div class="chat-h">
         <span class="t">Live chat</span>
@@ -69,6 +70,7 @@
         <div class="chat-login"><a href="{{ url_for('login') }}">Masuk</a> untuk ikut chat &amp; ganti siaran</div>
       {% endif %}
     </aside>
+    </div>
   </div>
 </main>
 {% endblock %}

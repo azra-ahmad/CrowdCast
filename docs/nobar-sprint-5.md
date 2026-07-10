@@ -35,11 +35,69 @@ Karena semua penonton mengacu ke jam yang sama (jam server), mereka mendengar mo
 **Keamanan**: `/audio` hanya menyajikan berkas yang sedang disiarkan (`broadcast.get_now_playing()`);
 path tidak pernah berasal dari input pengguna.
 
+## Bug yang ditemukan saat pengujian: "audio lompat mundur"
+
+Gejala: audio berulang kali ditarik mundur beberapa detik.
+
+**Penyebab sebenarnya — siaran berjalan lebih lambat dari 1×.** Streamer memakai
+`time.sleep(1/fps)`, sehingga waktu baca + resize + encode + kirim **ikut menambah** jeda.
+Diukur: posisi siaran hanya maju ~0,42 detik tiap 0,5 detik nyata (**~0,85×**). Audio browser
+selalu berjalan 1,0× → makin lama makin menyalip → melewati toleransi → **ditarik mundur**.
+Jadi yang lompat adalah **audionya**, bukan videonya.
+
+**Perbaikan (pacing real-time):** jadwalkan frame berikutnya berdasarkan jam
+(`next_frame_at += delay`, tidur sisa waktunya), bukan tidur tetap. Kalau terlambat, jadwal
+di-reset supaya "utang waktu" tidak menumpuk.
+
+## Bug kedua: dua streamer saling rebutan
+
+Guard lama (`last_id - frame_id > 300` dianggap restart) membuat dua streamer yang jalan
+bersamaan **bergantian diterima** → siaran maju-mundur. Diperbaiki dengan **`stream_id`**
+(acak per proses) di header: penerima mengunci satu streamer, mengabaikan yang lain, dan hanya
+berpindah bila streamer terkunci diam > 2 detik.
+
+Header final: `!IIHHI` → `stream_id | frame_id | total | index | pos_ms` (**16 byte**).
+
 ## Hasil Testing (terverifikasi)
 
-- [x] Header baru `!IHHI` = **12 byte**; roundtrip `pack/unpack` benar.
-- [x] Datagram maksimum 40012 byte → masih jauh di bawah batas UDP (~65507).
+Diuji pada instance terisolasi (port 5099 / UDP 9099) agar tidak mengganggu server yang berjalan.
+
+- [x] Header `!IIHHI` = **16 byte**; roundtrip `pack/unpack` benar; datagram maks 40016 byte
+      (jauh di bawah ~65507).
+- [x] **Anti streamer-dobel**: 24 sampel `pos` sambil sengaja menyalakan streamer kedua di
+      tengah pengujian → **0 kali posisi mundur**.
+- [x] **Tempo real-time**: posisi maju 8,00 detik dalam 8,00 detik nyata → **0,999×**
+      (sebelum perbaikan: ~0,85×).
 - [x] Syntax check Python (`py_compile`) & JavaScript (`node --check`) lolos.
+
+## Perbaikan UI
+
+**1. Chat memanjangkan halaman (bukan menggulung sendiri).**
+`overflow-y:auto` pada `.msgs` hanya menghasilkan area gulung bila tingginya **pasti**.
+Sebelumnya tinggi `.chat` ditentukan flex dari isinya → chat memanjang → baris ikut memanjang →
+`.player` teregang (muncul area hitam panjang di bawah video).
+Perbaikan: chat dibungkus `.chat-wrap` (tanpa tinggi sendiri, ikut tinggi player lewat
+`align-items:stretch`), lalu `.chat` dipasang `position:absolute; inset:0` sehingga isinya
+tidak mungkin mendorong tinggi.
+
+Terverifikasi di browser (viewport 1280×800), setelah menyuntik 60 pesan:
+
+| Metrik | Hasil |
+| --- | --- |
+| Tinggi player vs chat | 484 px : 484 px (sama) |
+| `.msgs` menggulung | ya (isi 3178 px, jendela 380 px) |
+| Halaman memanjang | **0 px** |
+
+**2. Warna nama per pengguna.**
+Palet 11 hue berjarak 30° (pasti terbedakan mata), saturasi/terang dikunci agar terbaca di
+latar gelap, merah dilewati karena dipakai sebagai warna aksen. Warna dibagikan menurut
+**urutan kemunculan pertama** di chat — karena setiap klien memuat riwayat pesan yang sama dan
+terurut, hasilnya konsisten di semua perangkat sekaligus menjamin tidak ada warna kembar.
+
+> Percobaan awal memakai hash → HSL 330 hue ditolak: `ajrahari` (hue 240) dan `aditonomy`
+> (hue 242) secara teknis berbeda, tapi terlihat sama persis.
+
+Terverifikasi: 6 pengguna → 6 warna berbeda, identik antar klien.
 
 ## Pending (diuji manual oleh user)
 

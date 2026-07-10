@@ -16,6 +16,7 @@ datagram UDP dibatasi ~65 KB. Frame yang hilang = frame drop (perilaku khas UDP)
 import socket
 import time
 import struct
+import random
 import os
 
 import cv2
@@ -25,9 +26,12 @@ import config
 import broadcast
 
 CHUNK_SIZE = 40000
-# frame_id (u32), total chunk (u16), index chunk (u16), posisi putar ms (u32).
-# pos_ms ikut dikirim supaya klien bisa menyelaraskan audio (HTTP) dengan video (UDP).
-HEADER = struct.Struct("!IHHI")
+# stream_id (u32), frame_id (u32), total chunk (u16), index chunk (u16), posisi putar ms (u32).
+# - pos_ms: dipakai klien untuk menyelaraskan audio (HTTP) dengan video (UDP).
+# - stream_id: identitas proses streamer. Kalau ada dua streamer jalan bersamaan, penerima
+#   mengunci salah satu dan mengabaikan yang lain (dulu keduanya rebutan -> siaran lompat-lompat).
+HEADER = struct.Struct("!IIHHI")
+STREAM_ID = random.getrandbits(32)
 # 960x540 supaya teks/slide terbaca jelas. Frame ~55 KB -> dipecah jadi 2 chunk UDP.
 # (Ini keuntungan punya chunking: resolusi tidak dibatasi ukuran 1 datagram.)
 JPEG_QUALITY = 70
@@ -76,6 +80,7 @@ def main():
     print("=" * 50)
     print("  CrowdCast UDP Video Server")
     print(f"  Menyiarkan ke {target[0]}:{target[1]}")
+    print(f"  stream_id: {STREAM_ID}")
     print("=" * 50)
 
     current = None
@@ -83,6 +88,7 @@ def main():
     fps = 25.0
     delay = 0.04
     frame_id = 0
+    next_frame_at = time.perf_counter()   # jadwal frame berikutnya (jaga tempo real-time)
 
     try:
         while True:
@@ -105,6 +111,7 @@ def main():
                 if desired:
                     cap, fps = _open(desired)
                     delay = 1.0 / (fps or 25.0)
+                    next_frame_at = time.perf_counter()
                     if cap:
                         print(f"[UDP] sekarang menyiarkan: {os.path.basename(desired)} ({fps:.0f} fps)")
 
@@ -116,6 +123,7 @@ def main():
             ret, frame = cap.read()
             if not ret:                                   # video habis -> loop
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                next_frame_at = time.perf_counter()
                 continue
 
             # posisi putar frame ini (ms) -> dipakai klien untuk menyelaraskan audio
@@ -132,10 +140,20 @@ def main():
             total = (len(data) + CHUNK_SIZE - 1) // CHUNK_SIZE
             for idx in range(total):
                 part = data[idx * CHUNK_SIZE:(idx + 1) * CHUNK_SIZE]
-                sock.sendto(HEADER.pack(frame_id, total, idx, pos_ms) + part, target)
+                sock.sendto(HEADER.pack(STREAM_ID, frame_id, total, idx, pos_ms) + part, target)
 
             frame_id = (frame_id + 1) % (2 ** 32)
-            time.sleep(delay)
+
+            # Jaga tempo real-time: jadwalkan frame berikutnya berdasarkan jam, bukan
+            # sleep tetap. Kalau pakai sleep(delay), waktu encode/kirim ikut menambah
+            # jeda -> siaran jalan lebih lambat dari 1x, dan audio (yang selalu 1x)
+            # jadi menyalip lalu ditarik mundur terus.
+            next_frame_at += delay
+            lag = next_frame_at - time.perf_counter()
+            if lag > 0:
+                time.sleep(lag)
+            else:
+                next_frame_at = time.perf_counter()   # terlambat -> jangan menumpuk utang
     except KeyboardInterrupt:
         print("\n[INFO] UDP server dihentikan.")
     finally:
