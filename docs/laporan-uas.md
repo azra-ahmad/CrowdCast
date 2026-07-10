@@ -293,10 +293,20 @@ video tampil, chat berjalan, jumlah penonton bertambah.
 
 ### 5.6 Bukti protokol (Wireshark)
 
-- Saat mengunggah → filter `tcp.port == 9010` → terlihat *three-way handshake* dan transfer byte.
-- Saat menonton → filter `udp.port == 9020` → terlihat aliran datagram UDP per-frame.
+**Saat mengunggah — filter `tcp.port == 9010`:** terlihat siklus koneksi TCP yang lengkap.
+- **Pembukaan (three-way handshake):** `SYN` → `SYN, ACK` → `ACK`.
+- **Transfer data:** paket `[PSH, ACK]` membawa potongan berkas, dibalas `[ACK]` di tiap paket,
+  dengan nomor `Seq` yang terus bertambah — bukti pengiriman andal dan berurutan.
+- **Penutupan:** `FIN, ACK` di kedua sisi (four-way termination).
 
-🖼️ *Tempel tangkapan layar Wireshark di sini.*
+**Saat menonton — filter `udp.port == 9020`:** terlihat **hanya datagram satu arah** dari server
+ke penerima, **tanpa handshake dan tanpa ACK**. Server menembakkan frame tanpa menunggu
+konfirmasi — kontras langsung yang menjelaskan pemilihan protokol: TCP menjamin keutuhan lewat
+jabat tangan dan konfirmasi, UDP mengutamakan kecepatan tanpa keduanya.
+
+🖼️ *Tempel dua tangkapan layar: (1) TCP `tcp.port==9010` — usahakan menyertakan paket SYN di
+awal agar handshake terlihat; (2) UDP `udp.port==9020`. Opsional: Statistics → Flow Graph untuk
+menampilkan handshake, transfer, dan penutupan dalam satu diagram.*
 
 ---
 
@@ -413,28 +423,32 @@ dapat dipakai sekali; permintaan `/audio` ketika belum ada siaran dibalas HTTP 4
 
 ### 7.5 Pengembangan agar lebih aman, cepat, dan andal
 
-**Lebih aman**
-- Menjalankan di belakang server WSGI produksi (Gunicorn/Waitress) dan reverse proxy.
-- Membatasi laju (rate limiting) pada login, registrasi, chat, dan unggah untuk mencegah spam.
-- Menambahkan CSRF token pada formulir dan validasi tipe berkas berdasarkan isi (magic number),
-  bukan hanya ekstensi.
-- Memindahkan penyimpanan pengguna ke basis data dengan kontrol akses, serta mencatat audit log.
-- Mengaktifkan Cloudflare Access agar hanya penonton berwenang yang dapat membuka domain.
+Ketiga aspek tersebut sebenarnya saling terkait, dan arah pengembangan yang sama sering
+memperbaiki lebih dari satu sekaligus.
 
-**Lebih cepat**
-- Mengganti MJPEG dengan codec berkompresi antar-frame (H.264/VP8) melalui **RTP/WebRTC**,
-  yang sekaligus membawa audio dan menghilangkan masalah sinkronisasi.
-- Memakai **SFU** (Selective Forwarding Unit) agar server hanya menerima satu aliran dan
-  meneruskannya ke banyak penonton secara efisien.
-- Menerapkan *adaptive bitrate*: menurunkan resolusi otomatis saat jaringan melemah.
-- Mengekstrak audio ke berkas terpisah agar tidak mengirim seluruh berkas video hanya untuk suaranya.
+Peningkatan terbesar datang dari **mengganti pipeline MJPEG dengan protokol media modern seperti
+RTP/WebRTC**. Langkah ini membuat aplikasi *lebih cepat* karena memakai kompresi antar-frame
+(H.264/VP8) yang jauh lebih hemat bandwidth daripada mengirim gambar utuh per frame; *lebih
+andal* karena audio dan video mengalir dalam satu aliran yang sudah tersinkron, sehingga masalah
+penyelarasan hilang; sekaligus *lebih aman* karena WebRTC mengenkripsi media secara bawaan.
+Untuk melayani banyak penonton, aliran ini diteruskan lewat **SFU** (Selective Forwarding Unit)
+agar server hanya menerima satu aliran lalu meneruskannya secara efisien — mencegah beban unggah
+membengkak seiring bertambahnya penonton — dan dilengkapi *adaptive bitrate* yang menurunkan
+kualitas otomatis saat jaringan melemah.
 
-**Lebih andal**
-- Memindahkan status chat dan sesi ke penyimpanan persisten (mis. Redis) agar bertahan saat restart.
-- Memindahkan berkas ke object storage (mis. Cloudflare R2) agar diska server tidak penuh.
-- Menambahkan pengawasan proses (systemd/supervisor) dan health check otomatis.
-- Menambahkan pengujian otomatis untuk protokol TCP dan UDP.
-- Menyediakan beberapa ruangan (multi-room) dengan streamer terpisah per ruangan.
+Dari sisi infrastruktur, aplikasi sebaiknya dijalankan di belakang **server WSGI produksi**
+(Gunicorn/Waitress) dengan reverse proxy, diawasi oleh manajer proses (systemd/supervisor) dan
+health check otomatis agar tetap hidup dan pulih sendiri saat bermasalah. Status yang kini
+disimpan di memori (chat, sesi, daftar penonton) dipindahkan ke **penyimpanan persisten** seperti
+Redis agar tidak hilang saat restart, dan berkas video dipindahkan ke **object storage** (mis.
+Cloudflare R2) agar diska server tidak penuh — dua hal yang langsung menaikkan keandalan.
+
+Dari sisi keamanan, sistem diperkuat dengan **rate limiting** pada login, registrasi, chat, dan
+unggah untuk mencegah penyalahgunaan; **CSRF token** pada formulir; validasi tipe berkas
+berdasarkan isi (magic number), bukan sekadar ekstensi; penyimpanan pengguna di basis data yang
+disertai kontrol akses dan audit log; serta **Cloudflare Access** agar hanya penonton berwenang
+yang dapat membuka domain. Terakhir, pengujian otomatis untuk jalur TCP dan UDP menjaga agar
+seluruh perbaikan tersebut tetap andal saat aplikasi terus dikembangkan.
 
 ---
 
