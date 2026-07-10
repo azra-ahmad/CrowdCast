@@ -304,9 +304,22 @@ ke penerima, **tanpa handshake dan tanpa ACK**. Server menembakkan frame tanpa m
 konfirmasi — kontras langsung yang menjelaskan pemilihan protokol: TCP menjamin keutuhan lewat
 jabat tangan dan konfirmasi, UDP mengutamakan kecepatan tanpa keduanya.
 
-🖼️ *Tempel dua tangkapan layar: (1) TCP `tcp.port==9010` — usahakan menyertakan paket SYN di
-awal agar handshake terlihat; (2) UDP `udp.port==9020`. Opsional: Statistics → Flow Graph untuk
-menampilkan handshake, transfer, dan penutupan dalam satu diagram.*
+**Perbandingan langsung dari kedua tangkapan layar:**
+
+| Aspek | TCP (unggah, port 9010) | UDP (streaming, port 9020) |
+| --- | --- | --- |
+| Pembukaan koneksi | Ada — three-way handshake (SYN, SYN-ACK, ACK) | Tidak ada |
+| Arah paket | Dua arah (client ↔ server) | Satu arah (server → penerima) |
+| Konfirmasi (ACK) | Ada di tiap paket | Tidak ada |
+| Nomor urut (Seq) | Ada, bertambah — menjamin urutan | Tidak ada |
+| Penutupan | Ada — FIN, ACK (four-way) | Tidak ada |
+| Sifat | Andal, utuh, berurutan | Cepat, tanpa jaminan |
+
+Kesimpulan: TCP menjamin keutuhan melalui jabat tangan, konfirmasi, dan penomoran; UDP
+mengutamakan kecepatan dengan menembakkan datagram tanpa semua itu.
+
+🖼️ *Tempel dua tangkapan layar: (1) TCP `tcp.port==9010` — sertakan paket SYN di awal;
+(2) UDP `udp.port==9020`.*
 
 ---
 
