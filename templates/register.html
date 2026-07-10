@@ -2,14 +2,20 @@
 {% block title %}Daftar — CrowdCast{% endblock %}
 
 {% block body %}
-<div class="wrap auth-top">
-  <a class="logo" href="{{ url_for('index') }}">
-    <img class="mk" src="{{ url_for('static', filename='img/CrowdCast.png') }}" alt="CrowdCast" style="width:28px;height:28px">
-    <span class="wm">CrowdCast</span>
-  </a>
-</div>
+<div class="wrap auth-login">
+  <div class="auth-hero">
+    <a class="auth-brand" href="{{ url_for('index') }}">
+      <img src="{{ url_for('static', filename='img/CrowdCast.png') }}" alt="CrowdCast">
+      <span class="wm">CrowdCast</span>
+    </a>
+    <h1>One stream.<br>Everyone has the remote.</h1>
+    <p class="lead">Satu layar, ditonton bareng. Siapa pun bisa ganti siarannya — kapan aja.</p>
+    <div class="feats">
+      <span><span class="p">●</span> Nonton bareng real-time</span>
+      <span><span class="p">●</span> Chat langsung</span>
+    </div>
+  </div>
 
-<div class="wrap auth-narrow">
   <div class="card">
     <h2>Buat akun</h2>
     <p class="sub">Daftar buat ikut chat &amp; ganti siaran.</p>
