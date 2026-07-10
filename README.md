@@ -85,9 +85,19 @@ cp .env.example .env        # isi kredensial (lihat .env.example)
 alamat socket (`TCP_FILE_HOST/PORT`, `UDP_VIDEO_HOST/PORT` — default `127.0.0.1`).
 Kalau kredensial Gmail dikosongkan, OTP di-print ke terminal (mode dev).
 
-## Menjalankan (lokal, 3 proses)
+## Menjalankan (lokal)
 
-Buka 3 terminal:
+### Cara mudah — satu terminal
+
+```bash
+python run.py
+```
+
+`run.py` menyalakan ketiga proses (tetap **proses terpisah** yang berkomunikasi lewat socket),
+menggabungkan log-nya dengan label `[tcp] [udp] [web]`, dan **Ctrl+C sekali mematikan semuanya**.
+Sebelum start, port diperiksa dulu supaya tidak ada instance dobel.
+
+### Cara manual — tiga terminal
 
 ```bash
 python tcp_file_server.py    # 1) backend upload TCP  (port 9010)
@@ -98,8 +108,9 @@ python app.py                # 3) web app             (http://localhost:5000)
 Buka `http://localhost:5000` → nonton langsung; Daftar/Masuk untuk chat & "Ganti tontonan".
 
 > **Jalankan tiap program sekali saja.** Kalau `udp_video_server.py` tidak sengaja jalan dua
-> kali (mis. terminal lama ditutup tanpa `Ctrl+C`, jadi prosesnya masih hidup), siaran akan
-> tersendat karena dua streamer mengirim ke port yang sama.
+> kali (mis. terminal lama ditutup tanpa `Ctrl+C`, jadi prosesnya masih hidup), penerima akan
+> mengunci salah satu streamer dan mengabaikan yang lain — siaran tetap jalan, tapi ada proses
+> mubazir. `run.py` sudah menolak start bila mendeteksi instance lama.
 >
 > Ini **tidak berhubungan dengan jumlah video yang di-upload** — upload video sebanyak apa pun
 > aman, karena hanya ada 1 video aktif pada satu waktu.

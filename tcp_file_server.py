@@ -89,7 +89,7 @@ def main():
     server.listen(10)
 
     print("=" * 50)
-    print("  NetVault TCP File Server")
+    print("  CrowdCast TCP File Server")
     print(f"  Listening di {HOST}:{PORT}")
     print(f"  Simpan ke: {config.UPLOAD_DIR}")
     print("=" * 50)
