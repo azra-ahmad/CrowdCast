@@ -54,6 +54,20 @@ def _make_placeholder() -> bytes:
 PLACEHOLDER = _make_placeholder()
 
 
+# ─── Cache-busting aset statis ───────────────────────────────────────────────
+_STATIC_FILES = ("static/css/style.css", "static/js/main.js")
+
+
+@app.context_processor
+def _inject_asset_version():
+    """Versi aset dari waktu-modifikasi file, supaya browser selalu ambil CSS/JS terbaru."""
+    try:
+        v = int(max(os.path.getmtime(os.path.join(BASE_DIR, p)) for p in _STATIC_FILES))
+    except OSError:
+        v = 1
+    return {"asset_v": v}
+
+
 # ─── State chat & presence (in-memory, tanpa DB) ─────────────────────────────
 _chat_lock = threading.Lock()
 _messages: list[dict] = []      # {id, user, text, ts}
