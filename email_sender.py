@@ -40,22 +40,22 @@ def _send(to_email: str, subject: str, body: str) -> bool:
 
 
 def send_otp_email(to_email: str, username: str, code: str) -> bool:
-    subject = "Kode Verifikasi NetVault"
+    subject = "Kode Verifikasi CrowdCast"
     body = (
         f"Halo {username},\n\n"
         f"Kode verifikasi (OTP) kamu adalah: {code}\n\n"
         f"Kode berlaku 5 menit. Jangan bagikan ke siapa pun.\n\n"
-        f"— NetVault"
+        f"— CrowdCast"
     )
     return _send(to_email, subject, body)
 
 
 def send_login_alert(to_email: str, username: str) -> bool:
-    subject = "Login Berhasil - NetVault"
+    subject = "Login Berhasil - CrowdCast"
     body = (
         f"Halo {username},\n\n"
-        f"Akun kamu baru saja login ke NetVault.\n"
+        f"Akun kamu baru saja login ke CrowdCast.\n"
         f"Kalau ini bukan kamu, segera ganti password.\n\n"
-        f"— NetVault"
+        f"— CrowdCast"
     )
     return _send(to_email, subject, body)

@@ -1,5 +1,5 @@
 """
-NetVault - Flask web gateway (UAS Pemrograman Jaringan).
+CrowdCast - Flask web gateway (UAS Pemrograman Jaringan).
 Menyatukan: UI, login, verifikasi email, upload file via TCP, streaming video via UDP.
 
 Alur:

@@ -1,5 +1,5 @@
 """
-Konfigurasi terpusat NetVault.
+Konfigurasi terpusat CrowdCast.
 Semua nilai sensitif dibaca dari file .env (lihat .env.example).
 """
 
