@@ -77,6 +77,7 @@
   {% if session.user %}
   const CHAT_SEND_URL = "{{ url_for('chat_send') }}";
   const UPLOAD_URL = "{{ url_for('upload') }}";
+  const MAX_UPLOAD_BYTES = {{ max_upload_bytes }};
   {% endif %}
 </script>
 {% endblock %}

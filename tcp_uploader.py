@@ -36,7 +36,7 @@ def upload_via_tcp(filename: str, stream, size: int) -> tuple[bool, str]:
     if size <= 0:
         return False, "File kosong."
     if size > config.MAX_FILE_SIZE:
-        return False, "Video terlalu besar (maks 200 MB)."
+        return False, f"Video terlalu besar ({_fmt_size(size)}). Maksimal {_fmt_size(config.MAX_FILE_SIZE)}."
 
     try:
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

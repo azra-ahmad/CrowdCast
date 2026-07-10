@@ -19,7 +19,7 @@ turun / ada frame yang hilang — ciri khas UDP.
 
 1. Interface (UI) berbasis web — tema streaming (dark).
 2. Sistem login + **verifikasi email** (OTP via Gmail SMTP).
-3. **Upload file via TCP** (streaming per-chunk, maks 200 MB).
+3. **Upload file via TCP** (streaming per-chunk, maks 95 MB).
 4. **Streaming video via UDP** (frame per-frame, letterbox menjaga rasio).
 5. Chat real-time + jumlah penonton online (bonus).
 6. Deploy via DNS Cloudflare.
@@ -133,4 +133,5 @@ Akses lewat `https://crowdcast.domainmu.com` (via DNS Cloudflare).
 - **Tanpa audio**: video dikirim sebagai frame gambar (MJPEG) via UDP; gambar tidak membawa
   suara. Menambah audio butuh pipeline berbeda (mis. WebRTC), di luar scope tugas.
 - Password di-hash (`werkzeug.security`); `.env` & `users.json` tidak di-commit (`.gitignore`).
-- Nama file di-sanitasi (`os.path.basename`) + batas ukuran 200 MB.
+- Nama file di-sanitasi (`os.path.basename`) + batas ukuran 95 MB (validasi di client & server;
+  Cloudflare plan gratis menolak request body > 100 MB).

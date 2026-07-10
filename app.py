@@ -59,13 +59,20 @@ _STATIC_FILES = ("static/css/style.css", "static/js/main.js")
 
 
 @app.context_processor
-def _inject_asset_version():
-    """Versi aset dari waktu-modifikasi file, supaya browser selalu ambil CSS/JS terbaru."""
+def _inject_template_globals():
+    """Versi aset (cache-busting) + batas upload, supaya template & JS satu sumber."""
     try:
         v = int(max(os.path.getmtime(os.path.join(BASE_DIR, p)) for p in _STATIC_FILES))
     except OSError:
         v = 1
-    return {"asset_v": v}
+    return {"asset_v": v, "max_upload_bytes": config.MAX_FILE_SIZE}
+
+
+@app.errorhandler(413)
+def _payload_too_large(_e):
+    """Balas JSON (bukan halaman HTML) supaya JS bisa menampilkan pesan yang jelas."""
+    mb = config.MAX_FILE_SIZE // (1024 * 1024)
+    return jsonify(success=False, message=f"Video terlalu besar (maks {mb} MB)."), 413
 
 
 # ─── State chat & presence (in-memory, tanpa DB) ─────────────────────────────

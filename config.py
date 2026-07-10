@@ -23,8 +23,10 @@ TCP_FILE_PORT = int(os.getenv("TCP_FILE_PORT", "9010"))
 UDP_VIDEO_HOST = os.getenv("UDP_VIDEO_HOST", "127.0.0.1")
 UDP_VIDEO_PORT = int(os.getenv("UDP_VIDEO_PORT", "9020"))
 
-# Batas ukuran video upload: 200 MB
-MAX_FILE_SIZE = 200 * 1024 * 1024
+# Batas ukuran video upload: 95 MB.
+# Cloudflare (plan gratis) menolak request body > 100 MB, dan yang dihitung adalah
+# seluruh body (file + overhead multipart), jadi disisakan margin.
+MAX_FILE_SIZE = 95 * 1024 * 1024
 
 # Ekstensi video yang boleh di-upload
 ALLOWED_VIDEO_EXT = {".mp4", ".mkv", ".avi", ".mov", ".webm"}

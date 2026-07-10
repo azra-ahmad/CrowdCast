@@ -74,9 +74,24 @@ function initCast() {
 
   castBtn.addEventListener("click", () => fileInput.click());
 
+  const ALLOWED_EXT = /\.(mp4|mkv|avi|mov|webm)$/i;
+
   fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
     if (!file) return;
+
+    // ── validasi di client: gagal cepat, jangan biarkan user menunggu sia-sia ──
+    if (!ALLOWED_EXT.test(file.name)) {
+      toast("Harus file video (mp4, mkv, avi, mov, webm).", "error");
+      fileInput.value = "";
+      return;
+    }
+    if (typeof MAX_UPLOAD_BYTES === "number" && file.size > MAX_UPLOAD_BYTES) {
+      toast(`Video terlalu besar (${fmtSize(file.size)}). Maksimal ${fmtSize(MAX_UPLOAD_BYTES)}.`, "error");
+      fileInput.value = "";
+      return;
+    }
+
     const form = new FormData();
     form.append("file", file);
 
@@ -90,21 +105,33 @@ function initCast() {
     xhr.upload.addEventListener("progress", (e) => {
       if (e.lengthComputable) bar.style.width = Math.round((e.loaded / e.total) * 100) + "%";
     });
-    xhr.onload = () => {
-      let res = {};
-      try { res = JSON.parse(xhr.responseText); } catch (_) {}
+    function fail(msg) {
       castBtn.disabled = false;
       fileInput.value = "";
+      overlay.classList.remove("show");
+      toast(msg, "error");
+    }
+
+    xhr.onload = () => {
+      // Cloudflare/Flask bisa membalas HTML saat menolak; jangan asumsikan JSON
+      let res = {};
+      try { res = JSON.parse(xhr.responseText); } catch (_) {}
+
       if (xhr.status === 200 && res.success) {
+        castBtn.disabled = false;
+        fileInput.value = "";
         label.textContent = "Siaran diganti!";
         toast(res.message || "Siaran diganti.", "success");
         setTimeout(() => overlay.classList.remove("show"), 900);
-      } else {
-        overlay.classList.remove("show");
-        toast(res.message || "Gagal mengganti siaran.", "error");
+        return;
       }
+      if (res.message) return fail(res.message);
+      if (xhr.status === 413) return fail("Video terlalu besar — ditolak server.");
+      if (xhr.status === 502) return fail("File server (TCP) tidak merespons. Cek apakah tcp_file_server.py jalan.");
+      fail(`Gagal mengganti siaran (HTTP ${xhr.status}).`);
     };
-    xhr.onerror = () => { castBtn.disabled = false; overlay.classList.remove("show"); toast("Koneksi bermasalah.", "error"); };
+    xhr.onerror = () => fail("Koneksi terputus saat mengunggah. Coba ulangi, atau pakai video yang lebih kecil.");
+    xhr.onabort = () => fail("Upload dibatalkan.");
     xhr.send(form);
   });
 }
@@ -120,3 +147,8 @@ function toast(msg, kind) {
   setTimeout(() => el.remove(), 4000);
 }
 function escapeHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+function fmtSize(n) {
+  if (n < 1024) return n + " B";
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+  return (n / (1024 * 1024)).toFixed(1) + " MB";
+}
