@@ -2,9 +2,6 @@
   <img src="static/img/CrowdCast.png" alt="CrowdCast" width="150">
 </p>
 
-<h1 align="center">CrowdCast</h1>
-<p align="center"><em>One stream. Everyone has the remote.</em></p>
-
 # Pemrograman Jaringan - UAS
 
 Aplikasi **nonton bareng berbasis web** yang diberi nama **CrowdCast** pengembangan dari tugas Socket Programming (TCP & UDP).
