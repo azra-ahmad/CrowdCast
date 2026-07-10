@@ -10,6 +10,14 @@ import config
 BUFFER = 64 * 1024
 
 
+def _fmt_size(n: int) -> str:
+    if n < 1024:
+        return f"{n} B"
+    if n < 1024 * 1024:
+        return f"{n / 1024:.1f} KB"
+    return f"{n / (1024 * 1024):.1f} MB"
+
+
 def _recv_line(conn: socket.socket) -> str:
     data = b""
     while not data.endswith(b"\n"):
@@ -54,7 +62,8 @@ def upload_via_tcp(filename: str, stream, size: int) -> tuple[bool, str]:
 
         result = _recv_line(conn)
         if result.startswith("OK"):
-            return True, f"'{filename}' disiarkan via TCP ({size} bytes)."
+            # upload lewat TCP; penyiarannya lewat UDP (jangan tertukar)
+            return True, f"'{filename}' diupload via TCP ({_fmt_size(size)}) — sekarang disiarkan via UDP."
         return False, result or "Upload gagal."
     except Exception as e:
         return False, f"Error saat upload: {e}"
