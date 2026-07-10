@@ -42,11 +42,11 @@ udp_receiver.start()
 
 # ─── Placeholder frame (saat streaming belum ada) ────────────────────────────
 def _make_placeholder() -> bytes:
-    img = np.full((360, 640, 3), 12, dtype=np.uint8)  # hampir hitam (tema dark)
-    cv2.putText(img, "Belum ada siaran", (175, 175),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (150, 150, 155), 2)
-    cv2.putText(img, "Upload video untuk memulai", (170, 210),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (110, 110, 115), 1)
+    img = np.full((540, 960, 3), 12, dtype=np.uint8)  # hampir hitam (tema dark)
+    cv2.putText(img, "Belum ada siaran", (285, 265),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.2, (150, 150, 155), 2)
+    cv2.putText(img, "Upload video untuk memulai", (300, 310),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.65, (110, 110, 115), 1)
     ok, buf = cv2.imencode(".jpg", img)
     return buf.tobytes()
 
@@ -291,12 +291,16 @@ def chat_poll():
 # ─── Streaming: relay frame UDP -> MJPEG ─────────────────────────────────────
 @app.route("/video_feed")
 def video_feed():
+    # 20 fps cukup untuk konten video/slide, dan menekan bandwidth per penonton
+    # (tiap penonton dapat stream MJPEG sendiri dari uplink server).
+    relay_fps = 20
+
     def generate():
         while True:
             frame = udp_receiver.get_latest_frame() or PLACEHOLDER
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-            time.sleep(1 / 30)
+            time.sleep(1 / relay_fps)
 
     return Response(generate(),
                     mimetype="multipart/x-mixed-replace; boundary=frame")

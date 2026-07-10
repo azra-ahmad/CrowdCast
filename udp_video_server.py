@@ -26,8 +26,10 @@ import broadcast
 
 CHUNK_SIZE = 40000
 HEADER = struct.Struct("!IHH")   # frame_id (uint32), total (uint16), index (uint16)
-JPEG_QUALITY = 60
-FRAME_SIZE = (640, 360)
+# 960x540 supaya teks/slide terbaca jelas. Frame ~55 KB -> dipecah jadi 2 chunk UDP.
+# (Ini keuntungan punya chunking: resolusi tidak dibatasi ukuran 1 datagram.)
+JPEG_QUALITY = 70
+FRAME_SIZE = (960, 540)
 
 
 def _is_uploaded(path: str) -> bool:
