@@ -53,7 +53,7 @@ Penyimpanan tanpa basis data: pengguna disimpan di `users.json`, video aktif dit
 flowchart LR
     B["Browser (Client)<br/>nonton · chat · unggah"]
 
-    subgraph SERVER["Mesin Server (laptop)"]
+    subgraph SERVER["Mesin Server (VM Ubuntu)"]
         F["app.py — Flask Gateway<br/>port 5000"]
         T["tcp_file_server.py<br/>port 9010"]
         U["udp_video_server.py<br/>streamer"]
@@ -287,9 +287,16 @@ bandwidth tetap wajar.
 
 ### 5.5 Pengujian deployment
 
-Aplikasi diekspos lewat **Cloudflare Tunnel** ke `https://azra.jaringankomputer.space`.
-Diuji dari ponsel melalui jaringan seluler (4G) — di luar jaringan lokal — dan berhasil:
-video tampil, chat berjalan, jumlah penonton bertambah.
+Seluruh sisi server (ketiga proses) dijalankan di **VM Ubuntu**, lalu diekspos lewat
+**Cloudflare Tunnel** ke `https://azra.jaringankomputer.space`. Dengan begitu **client dan
+server berjalan di mesin yang berbeda**: server di VM, sedangkan client (browser) diakses dari
+perangkat lain — laptop maupun ponsel — melalui domain tersebut. Diuji dari ponsel via jaringan
+seluler (di luar jaringan lokal) dan berhasil: video tampil, chat berjalan, jumlah penonton
+bertambah.
+
+> Catatan: karena client-nya browser yang berkomunikasi lewat **HTTP**, komunikasi lintas
+> perangkat sudah terjadi pada lapisan HTTP (browser ↔ server di VM). Socket TCP dan UDP berperan
+> sebagai jalur internal antar-proses di sisi server.
 
 ### 5.6 Bukti protokol (Wireshark)
 
@@ -330,13 +337,16 @@ mengutamakan kecepatan dengan menembakkan datagram tanpa semua itu.
 3. 🖼️ Email OTP yang diterima + halaman verifikasi.
 4. 🖼️ Proses unggah (progress bar) dan notifikasi
    *"… diupload via TCP (35.0 MB) — sekarang disiarkan via UDP."*
-5. 🖼️ Terminal `run.py` memperlihatkan log `[tcp] [udp] [web]` (komunikasi antar proses).
-6. 🖼️ Wireshark: `tcp.port == 9010` (saat unggah).
-7. 🖼️ Wireshark: `udp.port == 9020` (saat siaran).
-8. 🖼️ Dua perangkat menonton bersamaan + chat (bukti sinkron & multi-client).
-9. 🖼️ Dashboard Cloudflare Tunnel status **Healthy**.
-10. 🖼️ Aplikasi dibuka dari ponsel via domain publik.
-11. 🖼️ Pesan error saat unggah gagal (mis. berkas > 95 MB).
+5. 🖼️ Terminal **SSH di VM** menjalankan `run.py` — log `[tcp] [udp] [web]` (server di VM,
+   komunikasi antar proses).
+6. 🖼️ Terminal **SSH di VM** menjalankan `cloudflared tunnel run` (connector di VM).
+7. 🖼️ Wireshark: `tcp.port == 9010` (saat unggah).
+8. 🖼️ Wireshark: `udp.port == 9020` (saat siaran).
+9. 🖼️ Aplikasi dibuka dari **perangkat lain** (laptop/ponsel) via domain publik — bukti client
+   dan server berada di mesin berbeda.
+10. 🖼️ Dua perangkat menonton bersamaan + chat (bukti sinkron & multi-client).
+11. 🖼️ Dashboard Cloudflare Tunnel status **Healthy**.
+12. 🖼️ Pesan error saat unggah gagal (mis. berkas > 95 MB).
 
 ---
 
