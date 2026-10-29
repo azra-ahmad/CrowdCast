@@ -2,9 +2,11 @@
   <img src="static/img/CrowdCast.png" alt="CrowdCast" width="150">
 </p>
 
-# Pemrograman Jaringan - UAS
+# CrowdCast — Watch Together
 
-Aplikasi **nonton bareng berbasis web** yang diberi nama **CrowdCast** pengembangan dari tugas Socket Programming (TCP & UDP).
+Aplikasi **nonton bareng berbasis web** dengan video bersama, chat real-time, dan eksplorasi komunikasi TCP, UDP, serta HTTP.
+
+Dikembangkan sebagai proyek akademik Socket Programming. Browser mengakses Flask sebagai gateway; koneksi TCP dan UDP berjalan di layanan backend.
 Satu theater global: siapa pun yang login bisa **upload video (via TCP)** untuk langsung jadi
 tontonan yang **disiarkan ke semua penonton (via UDP)**, sambil **chat real-time**.
 
@@ -15,7 +17,7 @@ Repo: https://github.com/azra-ahmad/CrowdCast
 - Video dikirim sebagai frame gambar (MJPEG) lewat UDP, sehingga tetap jalan walau kualitas
 turun / ada frame yang hilang — ciri khas UDP.
 
-## Fitur (ketentuan UAS)
+## Fitur
 
 1. Interface (UI) berbasis web — tema streaming (dark).
 2. Sistem login + **verifikasi email** (OTP via Gmail SMTP).
